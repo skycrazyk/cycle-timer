@@ -10,12 +10,12 @@ const stub = [
     {
         id: crypto.randomUUID(),
         title: 'First Timer',
-        duration: 5,
+        duration: 3,
     },
     {
         id: crypto.randomUUID(),
         title: 'Second Timer',
-        duration: 5,
+        duration: 4,
     },
     {
         id: crypto.randomUUID(),
@@ -104,9 +104,13 @@ export const App = () => {
             <h1>Timers</h1>
             <div>current timer timePassed: {timePassed}</div>
             <ul>
-                {timers.map((timer) => (
-                    <li>
-                        {timer.id} - {timer.title} - {timer.duration}
+                {timers.map((t) => (
+                    <li
+                        style={{
+                            ...(t === timer && { background: '#8EB69B' }),
+                        }}
+                    >
+                        {t.title} - {t.duration}
                     </li>
                 ))}
             </ul>
