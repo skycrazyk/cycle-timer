@@ -4,6 +4,7 @@ type Timer = {
     id: string
     title: string
     duration: number
+    repeat: number
 }
 
 const stub = [
@@ -11,23 +12,26 @@ const stub = [
         id: crypto.randomUUID(),
         title: 'First Timer',
         duration: 3,
+        repeat: 2,
     },
     {
         id: crypto.randomUUID(),
         title: 'Second Timer',
         duration: 4,
+        repeat: 0,
     },
     {
         id: crypto.randomUUID(),
         title: 'Third Timer',
         duration: 5,
+        repeat: 3,
     },
 ] satisfies Timer[]
 
 enum State {
-    stopped,
-    running,
-    paused,
+    stopped = 'stopped',
+    running = 'running',
+    paused = 'paused',
 }
 
 export const App = () => {
@@ -36,6 +40,7 @@ export const App = () => {
     const [state, setState] = useState(State.stopped)
     const [tickId, setTickId] = useState<number>()
     const [timePassed, setTimePassed] = useState(0)
+    const [repeat, setRepeat] = useState(0)
     const onStart = () => setState(State.running)
     const onPause = () => setState(State.paused)
     const onStop = () => setState(State.stopped)
@@ -49,24 +54,29 @@ export const App = () => {
     }
 
     useEffect(() => {
-        if (timePassed === 0) return
+        if (timePassed === 0 || !timer) return
 
-        if (timePassed === timer?.duration) {
-            const timerIndex = timers.findIndex((t) => t === timer)
+        if (timePassed === timer.duration) {
+            if (repeat === timer.repeat) {
+                const timerIndex = timers.findIndex((t) => t === timer)
 
-            if (timerIndex === -1) {
-                setState(State.stopped)
-                return
+                if (timerIndex === -1) {
+                    setState(State.stopped)
+                    return
+                }
+
+                const nextTimer = timers[timerIndex + 1]
+
+                if (!nextTimer) {
+                    setState(State.stopped)
+                    return
+                }
+
+                setTimer(nextTimer)
+            } else {
+                setTimePassed(0)
+                setRepeat((repeat) => repeat + 1)
             }
-
-            const nextTimer = timers[timerIndex + 1]
-
-            if (!nextTimer) {
-                setState(State.stopped)
-                return
-            }
-
-            setTimer(nextTimer)
         }
     }, [timePassed])
 
@@ -97,12 +107,14 @@ export const App = () => {
 
     useEffect(() => {
         setTimePassed(0)
+        setRepeat(0)
     }, [timer])
 
     return (
         <>
             <h1>Timers</h1>
             <div>current timer timePassed: {timePassed}</div>
+            <div>state: {state}</div>
             <ul>
                 {timers.map((t) => (
                     <li
@@ -110,7 +122,7 @@ export const App = () => {
                             ...(t === timer && { background: '#8EB69B' }),
                         }}
                     >
-                        {t.title} - {t.duration}
+                        {t.title}, duration: {t.duration}, repeat: {t.repeat}
                     </li>
                 ))}
             </ul>
