@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 type Timer = {
     id: string
@@ -6,6 +6,9 @@ type Timer = {
     duration: number
     repeat: number
 }
+
+const isValidTimer = (timer: Partial<Timer> | undefined) =>
+    timer?.repeat && timer.repeat > 0
 
 const stub = [
     {
@@ -18,7 +21,7 @@ const stub = [
         id: crypto.randomUUID(),
         title: 'Second Timer',
         duration: 4,
-        repeat: 0,
+        repeat: 1,
     },
     {
         id: crypto.randomUUID(),
@@ -41,23 +44,24 @@ export const App = () => {
     const [tickId, setTickId] = useState<number>()
     const [timePassed, setTimePassed] = useState(0)
     const [repeat, setRepeat] = useState(0)
-    const onStart = () => setState(State.running)
-    const onPause = () => setState(State.paused)
-    const onStop = () => setState(State.stopped)
-    const watchTime = () => {
-        const timeoutId = setTimeout(() => {
-            setTimePassed((timePassed) => timePassed + 1)
-            watchTime()
-        }, 1000)
+    const start = useCallback(() => setState(State.running), [])
+    const pause = useCallback(() => setState(State.paused), [])
+    const stop = useCallback(() => setState(State.stopped), [])
 
-        setTickId(timeoutId)
-    }
+    const watch = useCallback(() => {
+        setTickId(
+            setTimeout(() => {
+                setTimePassed((timePassed) => timePassed + 1)
+                watch()
+            }, 1000)
+        )
+    }, [])
 
     useEffect(() => {
         if (timePassed === 0 || !timer) return
 
         if (timePassed === timer.duration) {
-            if (repeat === timer.repeat) {
+            if (repeat === timer.repeat - 1) {
                 const timerIndex = timers.findIndex((t) => t === timer)
 
                 if (timerIndex === -1) {
@@ -67,7 +71,7 @@ export const App = () => {
 
                 const nextTimer = timers[timerIndex + 1]
 
-                if (!nextTimer) {
+                if (!isValidTimer(nextTimer)) {
                     setState(State.stopped)
                     return
                 }
@@ -85,11 +89,12 @@ export const App = () => {
             case State.running: {
                 if (timers.length === 0) break
 
-                if (!timer) {
-                    setTimer(timers[0])
-                }
+                const nextTimer = timer || timers[0]
 
-                watchTime()
+                if (!isValidTimer(nextTimer)) break
+
+                setTimer(nextTimer)
+                watch()
 
                 break
             }
@@ -127,9 +132,9 @@ export const App = () => {
                 ))}
             </ul>
             <div style={{ display: 'flex', gap: '1rem' }}>
-                <button onClick={onStart}>Start</button>
-                <button onClick={onPause}>Pause</button>
-                <button onClick={onStop}>Stop</button>
+                <button onClick={start}>Start</button>
+                <button onClick={pause}>Pause</button>
+                <button onClick={stop}>Stop</button>
             </div>
         </>
     )
