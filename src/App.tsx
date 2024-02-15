@@ -3,8 +3,15 @@ import { useState, useEffect, useCallback } from 'react'
 type Timer = {
     id: string
     title: string
-    duration: number
     repeat: number
+    duration: number
+}
+
+type Group = {
+    id: string
+    title: string
+    repeat: number
+    timers: Timer[]
 }
 
 const isValidTimer = (timer: Partial<Timer> | undefined) =>
